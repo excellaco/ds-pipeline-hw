@@ -14,7 +14,7 @@ pipeline {
         stage('Checkout') {
             steps {
                 git branch: 'main', 
-                url: 'https://github.com/ds-account/data-science-hello-world.git'
+                url: 'https://github.com/excellaco/ds-pipeline-hw.git'
             }
         }
         
