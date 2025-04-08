@@ -1,0 +1,7 @@
+{
+    "order_id": "12345",
+    "order_date": "2023-10-15",
+    "product_category": "electronics",
+    "revenue": 299.99,
+    "customer_id": "cust-789"
+  }

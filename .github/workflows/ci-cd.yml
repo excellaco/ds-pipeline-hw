@@ -1,0 +1,86 @@
+name: Pre-Jenkins Security Checks
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  security-checks:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install bandit safety pylint
+
+    - name: Run Bandit (Python security scanner)
+      run: |
+        bandit -r src/ -ll -ii
+      continue-on-error: false
+
+    - name: Check for vulnerable packages
+      run: |
+        safety check --full-report
+
+    - name: Run Pylint
+      run: |
+        pylint src/ --exit-zero
+
+    - name: Check AWS credentials in code
+      run: |
+        if grep -r "AKIA[0-9A-Z]{16}" .; then
+          echo "AWS credentials found in code!"
+          exit 1
+        fi
+        if grep -r "aws_access_key_id" .; then
+          echo "AWS credentials found in code!"
+          exit 1
+        fi
+
+    - name: Check for secrets
+      uses: gitleaks/gitleaks-action@v2
+      with:
+        config-path: .gitleaks.toml
+
+    - name: Terraform security scan
+      if: contains(github.event.pull_request.labels.*.name, 'terraform')
+      uses: bridgecrewio/checkov-action@v12
+      with:
+        directory: ./infra/terraform/
+        framework: terraform
+        quiet: true
+
+    # - name: CloudFormation security scan
+    #   if: contains(github.event.pull_request.labels.*.name, 'cloudformation')
+    #   uses: bridgecrewio/checkov-action@v12
+    #   with:
+    #     directory: ./infra/cloudformation/
+    #     framework: cloudformation
+    #     quiet: true
+
+    # - name: Notify Slack on success
+    #   if: success()
+    #   uses: rtCamp/action-slack-notify@v2
+    #   env:
+    #     SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+    #     SLACK_COLOR: good
+    #     SLACK_TITLE: "Pre-Jenkins Security Checks PASSED"
+    #     SLACK_MESSAGE: "Security checks completed successfully for ${{ github.repository }}"
+
+    # - name: Notify Slack on failure
+    #   if: failure()
+    #   uses: rtCamp/action-slack-notify@v2
+    #   env:
+    #     SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+    #     SLACK_COLOR: danger
+    #     SLACK_TITLE: "Pre-Jenkins Security Checks FAIL

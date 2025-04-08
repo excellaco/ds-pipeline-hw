@@ -1,0 +1,36 @@
+version: '3.8'
+services:
+  # Mock AWS Services
+  localstack:
+    image: localstack/localstack
+    ports:
+      - "4566:4566"  # LocalStack API
+      - "4510-4559:4510-4559"  # External services
+    environment:
+      - SERVICES=s3,glue,lambda,athena,lakeformation,iam
+      - DEFAULT_REGION=us-east-1
+      - DATA_DIR=/tmp/localstack
+    volumes:
+      - ./src/data_lake/raw:/tmp/localstack/raw  # Mount sample data
+
+  # Spark/Glue Testing
+  glue-local:
+    image: amazon/aws-glue-libs:glue_libs_3.0.0_image_01
+    ports:
+      - "4040:4040"  # Spark UI
+    volumes:
+      - ./src/glue:/home/glue_user/workspace
+    depends_on:
+      - localstack
+    environment:
+      - AWS_ENDPOINT_URL=http://localstack:4566
+
+  # Lambda Testing
+  lambda-tester:
+    build:
+      context: .
+      dockerfile: Dockerfile.lambda
+    volumes:
+      - ./src/lambda:/var/task
+    depends_on:
+      - localstack

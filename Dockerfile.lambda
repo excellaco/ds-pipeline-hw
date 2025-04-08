@@ -1,0 +1,16 @@
+FROM public.ecr.aws/lambda/python:3.9
+
+# Install dependencies
+COPY src/lambda/data_processor/requirements.txt .
+RUN pip install -r requirements.txt && \
+    pip install boto3 moto awslambdaric
+
+# Copy handler code
+COPY src/lambda/data_processor/ /var/task/
+
+# Mock AWS config
+ENV AWS_ACCESS_KEY_ID=test
+ENV AWS_SECRET_ACCESS_KEY=test
+ENV AWS_ENDPOINT_URL=http://localstack:4566
+
+CMD ["main.lambda_handler"]

@@ -1,0 +1,1 @@
+{"Modules":[{"Key":"","Source":"","Dir":"."},{"Key":"compute","Source":"./modules/compute","Dir":""},{"Key":"data_lake","Source":"./modules/data_lake","Dir":""},{"Key":"networking","Source":"./modules/networking","Dir":""}]}
